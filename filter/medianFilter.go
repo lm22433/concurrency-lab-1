@@ -101,6 +101,10 @@ func flattenImage(image [][]uint8) []uint8 {
 	return flattenedImage
 }
 
+func worker(startY, endY, startX, endX int, data func(y, x int) uint8, result chan<- [][]uint8) {
+	result <- medianFilter(startY, endY, startX, endX, data)
+}
+
 // filter reads in a png image, applies the filter and outputs the result as a png image.
 // filter is the function called by the tests in medianfilter_test.go
 func filter(filepathIn, filepathOut string, threads int) {
