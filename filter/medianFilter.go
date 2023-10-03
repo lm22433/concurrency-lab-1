@@ -118,11 +118,23 @@ func filter(filepathIn, filepathOut string, threads int) {
 
 	immutableData := makeImmutableMatrix(getPixelData(img))
 	var newPixelData [][]uint8
-	
+
 	if threads == 1 {
 		newPixelData = medianFilter(0, height, 0, width, immutableData)
+	} else if threads == 2 || threads == 4 || threads == 8 || threads == 16 {
+		chunkHeight := height / threads
+		channels := make([]chan [][]uint8, threads)
+		for i := 0; i < threads; i++ {
+			channels[i] = make(chan [][]uint8)
+		}
+		for i := 0; i < threads; i++ {
+			go worker(i*chunkHeight, (i+1)*chunkHeight, 0, width, immutableData, channels[i])
+		}
+		for i := 0; i < threads; i++ {
+			newPixelData = append(newPixelData, <-channels[i]...)
+		}
 	} else {
-		panic("TODO Implement me")
+		panic("Invalid number of threads.")
 	}
 
 	imout := image.NewGray(image.Rect(0, 0, width, height))
