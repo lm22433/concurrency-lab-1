@@ -5,7 +5,9 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"log"
 	"os"
+	"runtime/trace"
 	"sort"
 )
 
@@ -150,6 +152,7 @@ func main() {
 	var filepathIn string
 	var filepathOut string
 	var threads int
+	var generateTrace bool
 
 	flag.StringVar(
 		&filepathIn,
@@ -169,6 +172,30 @@ func main() {
 		1,
 		"Specify the number of worker threads to use.")
 
+	flag.BoolVar(
+		&generateTrace,
+		"trace",
+		false,
+		"Generate a trace output file.")
+
 	flag.Parse()
+
+	if generateTrace {
+		f, err := os.Create("trace.out")
+		if err != nil {
+			log.Fatalf("failed to create trace output file: %v", err)
+		}
+		defer func() {
+			if err := f.Close(); err != nil {
+				log.Fatalf("failed to close trace file: %v", err)
+			}
+		}()
+
+		if err := trace.Start(f); err != nil {
+			log.Fatalf("failed to start trace: %v", err)
+		}
+		defer trace.Stop()
+	}
+
 	filter(filepathIn, filepathOut, threads)
 }
